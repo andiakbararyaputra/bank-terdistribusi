@@ -24,12 +24,17 @@ Browser ──HTTP──> Gateway Flask (port 5000)
         └──── replikasi RPC antar peer ────┘
 ```
 
+Dashboard web menampilkan kartu statistik (total saldo, jumlah rekening,
+cabang aktif, transaksi tercatat), status tiap node (**AKTIF**/**MATI**),
+daftar rekening, riwayat transaksi yang tereplikasi, serta cabang mana yang
+sedang melayani data ("Data dilayani oleh Cabang X").
+
 ## Cara Menjalankan
 
 ### 1. Install dependensi (sekali saja)
 
 ```bash
-pip install flask
+pip install -r requirements.txt
 ```
 
 > Jika muncul error *externally-managed-environment* (Ubuntu/Debian), gunakan
@@ -38,7 +43,7 @@ pip install flask
 > ```bash
 > python3 -m venv .venv
 > source .venv/bin/activate
-> pip install flask
+> pip install -r requirements.txt
 > ```
 
 ### 2. Jalankan semua dengan SATU perintah
@@ -127,23 +132,32 @@ python -m gateway.main
 
 ```
 bank-terdistribusi/
-├── run_all.py           # launcher satu perintah
+├── run_all.py             # launcher satu perintah
+├── requirements.txt       # dependensi Python (Flask)
+├── network.example.json   # contoh konfigurasi mode multi-laptop
 ├── common/
-│   └── config.py        # konfigurasi terpusat (cabang, port, path data)
-├── branch/              # ── MODUL NODE CABANG ──
-│   ├── main.py          # entry point (argparse + wiring)
-│   ├── storage.py       # persistensi JSON + seed rekening
-│   ├── bank.py          # logika bisnis: saldo, setor, tarik, transfer
-│   ├── replication.py   # broadcast ke peer + sinkronisasi startup
-│   └── server.py        # server XML-RPC (register fungsi remote)
-├── gateway/             # ── MODUL WEB GATEWAY ──
-│   ├── main.py          # entry point Flask
-│   ├── rpc_client.py    # klien RPC + failover + cek status
-│   ├── routes.py        # route web (dashboard & transaksi)
-│   ├── templates/       # halaman HTML (bahasa Indonesia)
-│   └── static/          # style.css
-└── data/                # file JSON per cabang (dibuat otomatis)
+│   └── config.py          # konfigurasi terpusat (cabang, port, network.json, batas saldo)
+├── branch/                # ── MODUL NODE CABANG ──
+│   ├── main.py            # entry point (argparse + wiring)
+│   ├── storage.py         # persistensi JSON + seed rekening
+│   ├── bank.py            # logika bisnis: saldo, setor, tarik, transfer
+│   ├── replication.py     # broadcast ke peer + sinkronisasi startup
+│   └── server.py          # server XML-RPC multi-thread (register fungsi remote)
+├── gateway/               # ── MODUL WEB GATEWAY ──
+│   ├── main.py            # entry point Flask
+│   ├── rpc_client.py      # klien RPC + failover + cek status
+│   ├── routes.py          # route web (dashboard & transaksi)
+│   ├── templates/         # halaman HTML (bahasa Indonesia)
+│   └── static/            # style.css
+└── data/                  # file JSON per cabang (dibuat otomatis)
 ```
+
+### Batasan & validasi
+
+- Jumlah transaksi harus **bilangan bulat positif** (validasi di node cabang).
+- Saldo maksimum per rekening **Rp2.000.000.000** — aman dari batas integer
+  XML-RPC (2³¹ − 1).
+- Riwayat transaksi menyimpan **50 entri terakhir** per cabang.
 
 ## Reset Data
 
