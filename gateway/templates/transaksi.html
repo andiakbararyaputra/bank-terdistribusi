@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="form-wrap">
+  <div class="form-kartu">
+    <div class="form-ikon {{ jenis }}">
+      {% if jenis == 'setor' %}
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M4 21h16"/>
+      </svg>
+      {% elif jenis == 'tarik' %}
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 21V9"/><path d="m8 13 4-4 4 4"/><path d="M4 3h16"/>
+      </svg>
+      {% else %}
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m17 3 4 4-4 4"/><path d="M21 7H8"/><path d="m7 21-4-4 4-4"/><path d="M3 17h13"/>
+      </svg>
+      {% endif %}
+    </div>
+    <h1>{{ judul }}</h1>
+    <p class="subjudul">
+      {% if jenis == 'setor' %}
+      Tambahkan dana ke rekening — transaksi otomatis tereplikasi ke semua cabang.
+      {% elif jenis == 'tarik' %}
+      Tarik dana dari rekening — saldo diperiksa konsisten di semua cabang.
+      {% else %}
+      Pindahkan dana antar rekening dalam satu transaksi.
+      {% endif %}
+    </p>
+
+    {% if accounts %}
+    <form method="post">
+      <label>Proses melalui cabang
+        <select name="cabang">
+          {% for bid, info in branches.items() %}
+          <option value="{{ bid }}">{{ info.nama }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      {% if jenis == 'transfer' %}
+      <label>Dari rekening
+        <select name="dari">
+          {% for no, acc in accounts|dictsort %}
+          <option value="{{ no }}">{{ no }} &mdash; {{ acc.nama }} ({{ acc.saldo|rupiah }})</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Ke rekening
+        <select name="ke">
+          {% for no, acc in accounts|dictsort %}
+          <option value="{{ no }}">{{ no }} &mdash; {{ acc.nama }} ({{ acc.saldo|rupiah }})</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% else %}
+      <label>Rekening
+        <select name="rekening">
+          {% for no, acc in accounts|dictsort %}
+          <option value="{{ no }}">{{ no }} &mdash; {{ acc.nama }} ({{ acc.saldo|rupiah }})</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endif %}
+
+      <label>Jumlah (Rp)
+        <input type="number" name="jumlah" min="1" required placeholder="contoh: 50000">
+      </label>
+      <button type="submit">{{ judul }}</button>
+    </form>
+    {% else %}
+    <p class="kosong">Tidak dapat memuat daftar rekening — pastikan minimal satu cabang hidup.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

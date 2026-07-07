@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bank Terdistribusi</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a class="brand" href="{{ url_for('web.index') }}">
+        <span class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/>
+          </svg>
+        </span>
+        <span class="brand-text">Bank<strong>Terdistribusi</strong></span>
+      </a>
+      <nav>
+        <a href="{{ url_for('web.index') }}"
+           class="{{ 'aktif' if request.path == '/' }}">Dashboard</a>
+        <a href="{{ url_for('web.transaksi', jenis='setor') }}"
+           class="{{ 'aktif' if request.path.endswith('/setor') }}">Setor</a>
+        <a href="{{ url_for('web.transaksi', jenis='tarik') }}"
+           class="{{ 'aktif' if request.path.endswith('/tarik') }}">Tarik</a>
+        <a href="{{ url_for('web.transaksi', jenis='transfer') }}"
+           class="{{ 'aktif' if request.path.endswith('/transfer') }}">Transfer</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, msg in messages %}
+        <div class="flash {{ category }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer>
+    <span>Tugas Sistem Terdistribusi</span>
+    <span class="dot">&bull;</span><span>RPC (XML-RPC)</span>
+    <span class="dot">&bull;</span><span>REST/Web (Flask)</span>
+    <span class="dot">&bull;</span><span>Replikasi</span>
+    <span class="dot">&bull;</span><span>Failover</span>
+  </footer>
+</body>
+</html>

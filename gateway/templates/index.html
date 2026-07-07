@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="subjudul">Pantau node cabang, rekening, dan transaksi bank terdistribusi</p>
+  </div>
+  {% if sumber %}<span class="chip">Data dilayani oleh {{ branches[sumber].nama }}</span>{% endif %}
+</div>
+
+{% set cabang_aktif = status.values()|select|list|length %}
+<div class="stats">
+  <div class="stat">
+    <span class="stat-label">Total Saldo</span>
+    <span class="stat-nilai">{{ accounts.values()|map(attribute='saldo')|sum|rupiah }}</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Rekening</span>
+    <span class="stat-nilai">{{ accounts|length }}</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Cabang Aktif</span>
+    <span class="stat-nilai">{{ cabang_aktif }}<small> / {{ branches|length }}</small></span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Transaksi Tercatat</span>
+    <span class="stat-nilai">{{ history|length }}</span>
+  </div>
+</div>
+
+<h2>Status Node Cabang</h2>
+<div class="cards">
+  {% for bid, info in branches.items() %}
+  <div class="card {{ 'hidup' if status.get(bid) else 'mati' }}">
+    <div class="card-atas">
+      <span class="titik"></span>
+      <strong>{{ info.nama }}</strong>
+    </div>
+    <span class="port">XML-RPC {{ info.host }}:{{ info.port }}</span>
+    <span class="badge">{{ 'AKTIF' if status.get(bid) else 'MATI' }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<h2>Daftar Rekening</h2>
+{% if accounts %}
+<div class="tabel-wrap">
+  <table>
+    <thead>
+      <tr><th>Nasabah</th><th>No. Rekening</th><th class="kanan">Saldo</th></tr>
+    </thead>
+    <tbody>
+      {% for no, acc in accounts|dictsort %}
+      <tr>
+        <td>
+          <div class="nasabah">
+            <span class="avatar warna-{{ loop.index0 % 4 }}">{{ acc.nama[0] }}</span>
+            {{ acc.nama }}
+          </div>
+        </td>
+        <td class="mono">{{ no }}</td>
+        <td class="saldo kanan">{{ acc.saldo|rupiah }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="kosong">Data rekening tidak tersedia — pastikan minimal satu cabang hidup.</p>
+{% endif %}
+
+<h2>Riwayat Transaksi <small>tereplikasi ke semua cabang</small></h2>
+{% if history %}
+<div class="tabel-wrap">
+  <table>
+    <thead>
+      <tr><th>Waktu</th><th>Diproses oleh</th><th>Jenis</th><th>Keterangan</th></tr>
+    </thead>
+    <tbody>
+      {% for h in history %}
+      <tr>
+        <td class="mono">{{ h.waktu }}</td>
+        <td>{{ h.cabang }}</td>
+        <td><span class="tag {{ h.jenis|lower }}">{{ h.jenis }}</span></td>
+        <td>{{ h.keterangan }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="kosong">Belum ada transaksi.</p>
+{% endif %}
+{% endblock %}
