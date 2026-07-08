@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "accounts": {
+    "1001": {
+      "nama": "Andi Akbar Arya Putra",
+      "saldo": 550000
+    },
+    "1002": {
+      "nama": "Muh. As'ad Habib",
+      "saldo": 0
+    },
+    "1003": {
+      "nama": "Muhammad Pasyafatir",
+      "saldo": 1750000
+    }
+  },
+  "history": [
+    {
+      "waktu": "07-07-2026 15:10:08",
+      "cabang": "Cabang B - Bandung",
+      "jenis": "TRANSFER",
+      "keterangan": "Transfer Rp750.000 dari 1002 (Muh. As'ad Habib) ke 1003 (Muhammad Pasyafatir)"
+    },
+    {
+      "waktu": "07-07-2026 15:09:46",
+      "cabang": "Cabang A - Jakarta",
+      "jenis": "SETOR",
+      "keterangan": "Setor Rp50.000 ke 1001 (Andi Akbar Arya Putra)"
+    }
+  ]
+}

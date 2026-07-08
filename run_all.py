@@ -61,7 +61,7 @@ def main():
                 nama, p = item
                 if p.poll() is not None:
                     print(f"[run_all] PERINGATAN: {nama} berhenti "
-                          f"(exit code {p.returncode})")
+                    f"(exit code {p.returncode})")
                     procs.remove(item)
     except KeyboardInterrupt:
         print("\n[run_all] Mematikan semua node ...")
