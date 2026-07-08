@@ -88,7 +88,8 @@
       {% endif %}
 
       <label>Jumlah (Rp)
-        <input type="number" name="jumlah" id="jumlah" min="1" required placeholder="contoh: 50.000">
+        <input type="number" name="jumlah" id="jumlah" min="1" max="{{ max_saldo }}" required
+               placeholder="contoh: 50.000">
       </label>
       <div class="nominal-cepat">
         <button type="button" class="nominal" data-nilai="50000">Rp 50 rb</button>

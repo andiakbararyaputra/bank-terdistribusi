@@ -12,6 +12,16 @@ from common import config
 RPC_ERRORS = (ConnectionError, OSError, xmlrpc.client.Error)
 
 
+def urutan_state(state):
+    """Kunci pengurutan state untuk replikasi: (version, origin).
+
+    Origin (id cabang yang terakhir menulis) menjadi pemutus seri deterministik
+    ketika dua cabang mencapai version yang sama akibat transaksi bersamaan,
+    sehingga semua node tetap konvergen ke satu state.
+    """
+    return (state.get("version", 0), str(state.get("origin", "")))
+
+
 def _proxy(branch_id):
     return xmlrpc.client.ServerProxy(config.rpc_url(branch_id), allow_none=True)
 
@@ -37,7 +47,7 @@ def sync_from_peers(branch_id):
     for peer in config.peers_of(branch_id):
         try:
             snap = _proxy(peer).snapshot()
-            if terbaik is None or snap["version"] > terbaik["version"]:
+            if terbaik is None or urutan_state(snap) > urutan_state(terbaik):
                 terbaik = snap
         except RPC_ERRORS:
             continue

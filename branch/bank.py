@@ -4,6 +4,7 @@ import threading
 from datetime import datetime
 
 from branch import storage
+from branch.replication import urutan_state
 from common import config
 
 MAX_HISTORY = 50  # riwayat transaksi yang disimpan
@@ -132,9 +133,16 @@ class Bank:
     # ---------------- replikasi ----------------
 
     def apply_replica(self, snapshot):
-        """Terima state dari peer; terapkan hanya jika lebih baru (version lebih tinggi)."""
+        """Terima state dari peer; terapkan hanya jika lebih baru.
+
+        Urutan state ditentukan pasangan (version, origin). Tanpa pemutus seri
+        origin, dua transaksi bersamaan di cabang berbeda menghasilkan version
+        sama dengan data berbeda dan saling menolak replika (split-brain
+        permanen). Dengan pemutus seri deterministik, semua node konvergen ke
+        state yang sama (last-writer-wins).
+        """
         with self._lock:
-            if snapshot["version"] > self.state["version"]:
+            if urutan_state(snapshot) > urutan_state(self.state):
                 self.state = snapshot
                 storage.save(self.branch_id, self.state)
                 self.log(f"REPLIKASI diterima (version {snapshot['version']})")
@@ -154,6 +162,7 @@ class Bank:
     def _commit(self, jenis, keterangan):
         """Naikkan version, catat riwayat, simpan ke disk (dipanggil saat memegang lock)."""
         self.state["version"] += 1
+        self.state["origin"] = self.branch_id  # pemutus seri replikasi
         self.state["history"].insert(0, {
             "waktu": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
             "cabang": self.nama_cabang,

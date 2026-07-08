@@ -35,7 +35,10 @@ def index():
     accounts, sumber = _ambil_accounts()
     history = []
     if sumber:
-        history, _ = rpc_client.call_branch(sumber, "get_history")
+        try:
+            history, _ = rpc_client.call_branch(sumber, "get_history")
+        except rpc_client.SemuaCabangMati:
+            pass  # cabang mati tepat setelah accounts terambil
 
     # Versi state tiap node — bukti replikasi: node sehat memiliki versi sama
     versions = {}
@@ -63,21 +66,30 @@ def transaksi(jenis):
 
     if request.method == "POST":
         cabang = request.form.get("cabang", "A")
+        if cabang not in config.BRANCHES:
+            flash("Cabang tidak dikenal.", "error")
+            return redirect(url_for("web.transaksi", jenis=jenis))
+
         try:
             jumlah = int(request.form["jumlah"])
         except (KeyError, ValueError):
             flash("Jumlah harus berupa angka bulat.", "error")
+            return redirect(url_for("web.transaksi", jenis=jenis))
+        # Batasi di gateway: nilai di atas MAX_SALDO melebihi batas integer
+        # XML-RPC (2^31-1) dan akan gagal dikirim ke node cabang.
+        if jumlah < 1 or jumlah > config.MAX_SALDO:
+            flash(f"Jumlah harus antara Rp 1 dan {rupiah(config.MAX_SALDO)}.", "error")
             return redirect(url_for("web.transaksi", jenis=jenis))
 
         try:
             if jenis == "transfer":
                 hasil, dilayani = rpc_client.call_branch(
                     cabang, "transfer",
-                    request.form["dari"], request.form["ke"], jumlah)
+                    request.form.get("dari", ""), request.form.get("ke", ""), jumlah)
             else:
                 method = "deposit" if jenis == "setor" else "withdraw"
                 hasil, dilayani = rpc_client.call_branch(
-                    cabang, method, request.form["rekening"], jumlah)
+                    cabang, method, request.form.get("rekening", ""), jumlah)
         except rpc_client.SemuaCabangMati:
             flash("Semua cabang tidak dapat dihubungi — transaksi gagal.", "error")
             return redirect(url_for("web.index"))
@@ -96,4 +108,5 @@ def transaksi(jenis):
         "transaksi.html",
         jenis=jenis, judul=JUDUL[jenis],
         accounts=accounts, branches=config.BRANCHES, status=status,
+        max_saldo=config.MAX_SALDO,
     )

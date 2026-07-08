@@ -1,5 +1,6 @@
 """Persistensi data cabang ke file JSON + data awal (seed)."""
 import json
+import os
 
 from common import config
 
@@ -19,6 +20,7 @@ def initial_state():
     """State awal: rekening seed, version 0, riwayat kosong."""
     return {
         "version": 0,
+        "origin": "",  # id cabang penulis terakhir (pemutus seri replikasi)
         "accounts": json.loads(json.dumps(SEED_ACCOUNTS)),  # salinan bebas
         "history": [],
     }
@@ -34,7 +36,14 @@ def load(branch_id):
 
 
 def save(branch_id, state):
-    """Simpan state cabang ke file JSON (folder dibuat otomatis)."""
+    """Simpan state cabang ke file JSON secara atomik (folder dibuat otomatis).
+
+    Tulis ke file sementara lalu os.replace agar file data tidak pernah
+    korup/separuh tertulis jika proses mati di tengah penyimpanan.
+    """
     config.DATA_DIR.mkdir(parents=True, exist_ok=True)
-    with open(_file_path(branch_id), "w", encoding="utf-8") as f:
+    path = _file_path(branch_id)
+    tmp = path.with_suffix(".json.tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+    os.replace(tmp, path)
