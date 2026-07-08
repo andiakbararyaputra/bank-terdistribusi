@@ -1,45 +1,66 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="form-wrap">
+  <!-- ===== Kartu form transaksi ===== -->
   <div class="form-kartu">
-    <div class="form-ikon {{ jenis }}">
-      {% if jenis == 'setor' %}
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M4 21h16"/>
-      </svg>
-      {% elif jenis == 'tarik' %}
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 21V9"/><path d="m8 13 4-4 4 4"/><path d="M4 3h16"/>
-      </svg>
-      {% else %}
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m17 3 4 4-4 4"/><path d="M21 7H8"/><path d="m7 21-4-4 4-4"/><path d="M3 17h13"/>
-      </svg>
-      {% endif %}
+    <div class="form-kepala">
+      <div class="form-ikon {{ jenis }}">
+        {% if jenis == 'setor' %}
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M4 21h16"/>
+        </svg>
+        {% elif jenis == 'tarik' %}
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21V9"/><path d="m8 13 4-4 4 4"/><path d="M4 3h16"/>
+        </svg>
+        {% else %}
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m17 3 4 4-4 4"/><path d="M21 7H8"/><path d="m7 21-4-4 4-4"/><path d="M3 17h13"/>
+        </svg>
+        {% endif %}
+      </div>
+      <div>
+        <h1>{{ judul }}</h1>
+        <p class="subjudul">
+          {% if jenis == 'setor' %}
+          Tambahkan dana ke rekening — otomatis tereplikasi ke semua cabang.
+          {% elif jenis == 'tarik' %}
+          Tarik dana dari rekening — saldo diperiksa konsisten di semua cabang.
+          {% else %}
+          Pindahkan dana antar rekening dalam satu transaksi atomik.
+          {% endif %}
+        </p>
+      </div>
     </div>
-    <h1>{{ judul }}</h1>
-    <p class="subjudul">
-      {% if jenis == 'setor' %}
-      Tambahkan dana ke rekening — transaksi otomatis tereplikasi ke semua cabang.
-      {% elif jenis == 'tarik' %}
-      Tarik dana dari rekening — saldo diperiksa konsisten di semua cabang.
-      {% else %}
-      Pindahkan dana antar rekening dalam satu transaksi.
-      {% endif %}
-    </p>
 
     {% if accounts %}
     <form method="post">
-      <label>Proses melalui cabang
-        <select name="cabang">
+      <fieldset class="pilih-cabang">
+        <legend>Proses melalui node cabang</legend>
+        <div class="cabang-opsi">
           {% for bid, info in branches.items() %}
-          <option value="{{ bid }}">{{ info.nama }}</option>
+          <label class="cabang-radio">
+            <input type="radio" name="cabang" value="{{ bid }}" {{ 'checked' if loop.first }}>
+            <span class="cabang-kotak {{ 'on' if status.get(bid) else 'off' }}">
+              <span class="titik"></span>
+              <span class="cabang-nama">{{ info.nama.split(' - ')[0] }}</span>
+              <span class="cabang-kota">{{ info.nama.split(' - ')[1] if ' - ' in info.nama }}</span>
+              <span class="cabang-status">{{ 'AKTIF' if status.get(bid) else 'MATI' }}</span>
+            </span>
+          </label>
           {% endfor %}
-        </select>
-      </label>
+        </div>
+        <p class="petunjuk-failover">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 16v-5M12 8h.01"/>
+          </svg>
+          Jika node pilihan mati, permintaan otomatis dialihkan ke node lain (failover).
+        </p>
+      </fieldset>
 
       {% if jenis == 'transfer' %}
       <label>Dari rekening
@@ -52,7 +73,7 @@
       <label>Ke rekening
         <select name="ke">
           {% for no, acc in accounts|dictsort %}
-          <option value="{{ no }}">{{ no }} &mdash; {{ acc.nama }} ({{ acc.saldo|rupiah }})</option>
+          <option value="{{ no }}" {{ 'selected' if loop.index == 2 }}>{{ no }} &mdash; {{ acc.nama }} ({{ acc.saldo|rupiah }})</option>
           {% endfor %}
         </select>
       </label>
@@ -67,13 +88,84 @@
       {% endif %}
 
       <label>Jumlah (Rp)
-        <input type="number" name="jumlah" min="1" required placeholder="contoh: 50000">
+        <input type="number" name="jumlah" id="jumlah" min="1" required placeholder="contoh: 50.000">
       </label>
-      <button type="submit">{{ judul }}</button>
+      <div class="nominal-cepat">
+        <button type="button" class="nominal" data-nilai="50000">Rp 50 rb</button>
+        <button type="button" class="nominal" data-nilai="100000">Rp 100 rb</button>
+        <button type="button" class="nominal" data-nilai="500000">Rp 500 rb</button>
+        <button type="button" class="nominal" data-nilai="1000000">Rp 1 jt</button>
+      </div>
+
+      <button type="submit" class="tombol-utama {{ jenis }}">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+        Proses {{ judul }}
+      </button>
     </form>
     {% else %}
-    <p class="kosong">Tidak dapat memuat daftar rekening — pastikan minimal satu cabang hidup.</p>
+    <div class="kosong-kartu">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.3 4.3 4.2 18a2 2 0 0 0 1.8 2.8h12a2 2 0 0 0 1.8-2.8L13.7 4.3a2 2 0 0 0-3.4 0Z"/>
+        <path d="M12 9v4M12 17h.01"/>
+      </svg>
+      <p>Tidak dapat memuat daftar rekening — pastikan minimal satu node cabang hidup.</p>
+    </div>
     {% endif %}
   </div>
+
+  <!-- ===== Panel alur sistem terdistribusi ===== -->
+  <aside class="panel-alur">
+    <h3>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>
+      </svg>
+      Alur di Balik Layar
+    </h3>
+    <ol class="alur-langkah">
+      <li>
+        <span class="langkah-no">1</span>
+        <div><strong>HTTP &rarr; Gateway</strong>
+        <span>Form dikirim ke web gateway Flask (microservice).</span></div>
+      </li>
+      <li>
+        <span class="langkah-no">2</span>
+        <div><strong>RPC ke node cabang</strong>
+        <span>Gateway memanggil fungsi remote via XML-RPC pada node pilihan.</span></div>
+      </li>
+      <li>
+        <span class="langkah-no">3</span>
+        <div><strong>Failover otomatis</strong>
+        <span>Node mati? Permintaan dialihkan ke node lain yang hidup.</span></div>
+      </li>
+      <li>
+        <span class="langkah-no">4</span>
+        <div><strong>Validasi &amp; commit</strong>
+        <span>Node memvalidasi saldo, menaikkan version, menyimpan ke disk.</span></div>
+      </li>
+      <li>
+        <span class="langkah-no">5</span>
+        <div><strong>Replikasi ke peer</strong>
+        <span>State baru disebarkan ke semua node agar data konsisten.</span></div>
+      </li>
+    </ol>
+    <div class="panel-catatan">
+      <strong>Batas sistem:</strong> jumlah bilangan bulat positif,
+      saldo maks Rp2.000.000.000 (aman dari batas integer XML-RPC 2&#179;&#185; &minus; 1).
+    </div>
+  </aside>
 </div>
+
+<script>
+  // Tombol nominal cepat mengisi input jumlah
+  document.querySelectorAll('.nominal').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.getElementById('jumlah').value = btn.dataset.nilai;
+    });
+  });
+</script>
 {% endblock %}

@@ -1,48 +1,180 @@
 {% extends "base.html" %}
 {% block content %}
+{% set cabang_aktif = status.values()|select|list|length %}
+{% set versi_hidup = versions.values()|reject('none')|list %}
+{% set sinkron = versi_hidup|unique|list|length <= 1 %}
+
 <div class="page-head">
   <div>
-    <h1>Dashboard</h1>
-    <p class="subjudul">Pantau node cabang, rekening, dan transaksi bank terdistribusi</p>
+    <h1>Dashboard Sistem</h1>
+    <p class="subjudul">Pantau node cabang, replikasi data, dan transaksi secara real-time</p>
   </div>
-  {% if sumber %}<span class="chip">Data dilayani oleh {{ branches[sumber].nama }}</span>{% endif %}
+  <div class="page-head-kanan">
+    {% if sumber %}
+    <span class="chip chip-sumber">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M13 6l6 6-6 6"/>
+      </svg>
+      Data dilayani oleh <strong>{{ branches[sumber].nama }}</strong>
+    </span>
+    {% endif %}
+    <button class="tombol-refresh" onclick="location.reload()" title="Muat ulang status node">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/>
+      </svg>
+      Muat Ulang
+    </button>
+  </div>
 </div>
 
-{% set cabang_aktif = status.values()|select|list|length %}
+<!-- ===== Kartu statistik ===== -->
 <div class="stats">
   <div class="stat">
-    <span class="stat-label">Total Saldo</span>
-    <span class="stat-nilai">{{ accounts.values()|map(attribute='saldo')|sum|rupiah }}</span>
+    <div class="stat-ikon ikon-ungu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/>
+        <path d="M6 12h.01M18 12h.01"/>
+      </svg>
+    </div>
+    <div class="stat-isi">
+      <span class="stat-label">Total Saldo</span>
+      <span class="stat-nilai">{{ accounts.values()|map(attribute='saldo')|sum|rupiah }}</span>
+    </div>
   </div>
   <div class="stat">
-    <span class="stat-label">Rekening</span>
-    <span class="stat-nilai">{{ accounts|length }}</span>
+    <div class="stat-ikon ikon-biru">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    </div>
+    <div class="stat-isi">
+      <span class="stat-label">Rekening Nasabah</span>
+      <span class="stat-nilai">{{ accounts|length }}</span>
+    </div>
   </div>
   <div class="stat">
-    <span class="stat-label">Cabang Aktif</span>
-    <span class="stat-nilai">{{ cabang_aktif }}<small> / {{ branches|length }}</small></span>
+    <div class="stat-ikon {{ 'ikon-hijau' if cabang_aktif == branches|length else ('ikon-kuning' if cabang_aktif else 'ikon-merah') }}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/>
+        <path d="M6 6h.01M6 18h.01"/>
+      </svg>
+    </div>
+    <div class="stat-isi">
+      <span class="stat-label">Node Cabang Aktif</span>
+      <span class="stat-nilai">{{ cabang_aktif }}<small> / {{ branches|length }}</small></span>
+    </div>
   </div>
   <div class="stat">
-    <span class="stat-label">Transaksi Tercatat</span>
-    <span class="stat-nilai">{{ history|length }}</span>
+    <div class="stat-ikon ikon-oranye">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/>
+      </svg>
+    </div>
+    <div class="stat-isi">
+      <span class="stat-label">Transaksi Tercatat</span>
+      <span class="stat-nilai">{{ history|length }}</span>
+    </div>
   </div>
 </div>
 
-<h2>Status Node Cabang</h2>
+<!-- ===== Topologi sistem terdistribusi ===== -->
+<h2>
+  Topologi Sistem
+  <small>gateway &rarr; RPC dengan failover &rarr; node saling mereplikasi</small>
+</h2>
+<div class="topologi">
+  <div class="topo-baris">
+    <div class="topo-klien">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>
+      </svg>
+      <div><strong>Browser</strong><span>HTTP :{{ request.host.split(':')[1] if ':' in request.host else 80 }}</span></div>
+    </div>
+    <div class="topo-garis vertikal"><span class="paket"></span></div>
+    <div class="topo-gateway">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5 19 19M19 5l-2.5 2.5M7.5 16.5 5 19"/>
+      </svg>
+      <div><strong>Web Gateway (Flask)</strong><span>REST &middot; failover otomatis via XML-RPC</span></div>
+    </div>
+  </div>
+  <div class="topo-cabangs">
+    {% for bid, info in branches.items() %}
+    <div class="topo-jalur">
+      <div class="topo-garis vertikal {{ 'putus' if not status.get(bid) }}">
+        {% if status.get(bid) %}<span class="paket"></span>{% endif %}
+      </div>
+      <div class="topo-node {{ 'hidup' if status.get(bid) else 'mati' }}">
+        <span class="titik"></span>
+        <strong>{{ info.nama.split(' - ')[0] }}</strong>
+        <span class="topo-port">:{{ info.port }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="topo-replikasi {{ 'nonaktif' if cabang_aktif < 2 }}">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 2v6h-6M3 11a9 9 0 0 1 15-5.7L21 8M7 22v-6h6M21 13a9 9 0 0 1-15 5.7L3 16"/>
+    </svg>
+    replikasi state antar peer (version {{ versi_hidup|max if versi_hidup else '—' }})
+  </div>
+</div>
+
+<!-- ===== Status node ===== -->
+<h2>
+  Status Node Cabang
+  <small>{{ 'state tersinkron — versi identik di semua node hidup' if sinkron and versi_hidup else 'menunggu sinkronisasi' }}</small>
+</h2>
 <div class="cards">
   {% for bid, info in branches.items() %}
   <div class="card {{ 'hidup' if status.get(bid) else 'mati' }}">
     <div class="card-atas">
       <span class="titik"></span>
       <strong>{{ info.nama }}</strong>
+      <span class="badge">{{ 'AKTIF' if status.get(bid) else 'MATI' }}</span>
     </div>
-    <span class="port">XML-RPC {{ info.host }}:{{ info.port }}</span>
-    <span class="badge">{{ 'AKTIF' if status.get(bid) else 'MATI' }}</span>
+    <div class="card-info">
+      <span class="card-baris">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/>
+          <path d="M6 6h.01M6 18h.01"/>
+        </svg>
+        <span class="mono">XML-RPC {{ info.host }}:{{ info.port }}</span>
+      </span>
+      <span class="card-baris">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v4M12 18v4M4.9 4.9l2.5 2.5M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/>
+        </svg>
+        {% if versions.get(bid) is not none %}
+        Versi state: <strong class="mono">v{{ versions[bid] }}</strong>
+        {% if versi_hidup and versions[bid] == versi_hidup|max %}
+        <span class="mini-tag sinkron">SINKRON</span>
+        {% else %}
+        <span class="mini-tag tertinggal">TERTINGGAL</span>
+        {% endif %}
+        {% else %}
+        <em class="redup">node tidak merespons — menunggu sinkronisasi ulang</em>
+        {% endif %}
+      </span>
+    </div>
   </div>
   {% endfor %}
 </div>
 
-<h2>Daftar Rekening</h2>
+<!-- ===== Rekening ===== -->
+<h2>Daftar Rekening <small>konsisten di semua cabang</small></h2>
 {% if accounts %}
 <div class="tabel-wrap">
   <table>
@@ -55,10 +187,10 @@
         <td>
           <div class="nasabah">
             <span class="avatar warna-{{ loop.index0 % 4 }}">{{ acc.nama[0] }}</span>
-            {{ acc.nama }}
+            <span>{{ acc.nama }}</span>
           </div>
         </td>
-        <td class="mono">{{ no }}</td>
+        <td><span class="mono rek">{{ no }}</span></td>
         <td class="saldo kanan">{{ acc.saldo|rupiah }}</td>
       </tr>
       {% endfor %}
@@ -66,9 +198,17 @@
   </table>
 </div>
 {% else %}
-<p class="kosong">Data rekening tidak tersedia — pastikan minimal satu cabang hidup.</p>
+<div class="kosong-kartu">
+  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10.3 4.3 4.2 18a2 2 0 0 0 1.8 2.8h12a2 2 0 0 0 1.8-2.8L13.7 4.3a2 2 0 0 0-3.4 0Z"/>
+    <path d="M12 9v4M12 17h.01"/>
+  </svg>
+  <p>Data rekening tidak tersedia — pastikan minimal satu node cabang hidup.</p>
+</div>
 {% endif %}
 
+<!-- ===== Riwayat ===== -->
 <h2>Riwayat Transaksi <small>tereplikasi ke semua cabang</small></h2>
 {% if history %}
 <div class="tabel-wrap">
@@ -79,8 +219,8 @@
     <tbody>
       {% for h in history %}
       <tr>
-        <td class="mono">{{ h.waktu }}</td>
-        <td>{{ h.cabang }}</td>
+        <td class="mono redup-td">{{ h.waktu }}</td>
+        <td><span class="proses-cabang">{{ h.cabang }}</span></td>
         <td><span class="tag {{ h.jenis|lower }}">{{ h.jenis }}</span></td>
         <td>{{ h.keterangan }}</td>
       </tr>
@@ -89,6 +229,12 @@
   </table>
 </div>
 {% else %}
-<p class="kosong">Belum ada transaksi.</p>
+<div class="kosong-kartu">
+  <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+  </svg>
+  <p>Belum ada transaksi — coba <a href="{{ url_for('web.transaksi', jenis='setor') }}">setor tunai</a> pertama Anda.</p>
+</div>
 {% endif %}
 {% endblock %}

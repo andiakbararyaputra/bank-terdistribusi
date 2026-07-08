@@ -36,6 +36,7 @@ def create_server(bank):
     server.register_function(bank.get_accounts, "get_accounts")
     server.register_function(bank.get_balance, "get_balance")
     server.register_function(bank.get_history, "get_history")
+    server.register_function(bank.get_version, "get_version")
     server.register_function(bank.snapshot, "snapshot")
 
     # Replikasi (dipanggil oleh peer)

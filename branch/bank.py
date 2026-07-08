@@ -48,6 +48,11 @@ class Bank:
         with self._lock:
             return copy.deepcopy(self.state["history"])
 
+    def get_version(self):
+        """Versi state saat ini — dipakai dashboard untuk indikator replikasi."""
+        with self._lock:
+            return self.state["version"]
+
     def snapshot(self):
         """Salinan lengkap state — dipakai untuk replikasi & sinkronisasi."""
         with self._lock:

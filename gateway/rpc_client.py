@@ -20,6 +20,15 @@ def _proxy(branch_id):
     return xmlrpc.client.ServerProxy(config.rpc_url(branch_id), allow_none=True)
 
 
+def call_direct(branch_id, method, *args):
+    """Panggil fungsi RPC pada SATU cabang saja, TANPA failover.
+
+    Dipakai untuk membaca info spesifik per node (mis. versi state
+    untuk indikator replikasi di dashboard).
+    """
+    return getattr(_proxy(branch_id), method)(*args)
+
+
 def call_branch(branch_id, method, *args):
     """Panggil fungsi RPC pada cabang pilihan, failover ke cabang lain jika mati.
 

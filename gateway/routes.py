@@ -36,10 +36,22 @@ def index():
     history = []
     if sumber:
         history, _ = rpc_client.call_branch(sumber, "get_history")
+
+    # Versi state tiap node — bukti replikasi: node sehat memiliki versi sama
+    versions = {}
+    for bid, hidup in status.items():
+        if hidup:
+            try:
+                versions[bid] = rpc_client.call_direct(bid, "get_version")
+            except rpc_client.RPC_ERRORS:
+                versions[bid] = None
+        else:
+            versions[bid] = None
+
     return render_template(
         "index.html",
         status=status, accounts=accounts, history=history,
-        sumber=sumber, branches=config.BRANCHES,
+        sumber=sumber, branches=config.BRANCHES, versions=versions,
     )
 
 
@@ -79,8 +91,9 @@ def transaksi(jenis):
         return redirect(url_for("web.index"))
 
     accounts, _ = _ambil_accounts()
+    status = rpc_client.branches_status()
     return render_template(
         "transaksi.html",
         jenis=jenis, judul=JUDUL[jenis],
-        accounts=accounts, branches=config.BRANCHES,
+        accounts=accounts, branches=config.BRANCHES, status=status,
     )
