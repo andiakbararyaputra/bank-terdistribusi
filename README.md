@@ -15,6 +15,10 @@
 
 ---
 
+## Preview
+
+![Dashboard Sistem Bank Terdistribusi](bank-terdistribusi-preview.png)
+
 ## 📑 Daftar Isi
 
 - [✨ Konsep yang Didemonstrasikan](#-konsep-yang-didemonstrasikan)
